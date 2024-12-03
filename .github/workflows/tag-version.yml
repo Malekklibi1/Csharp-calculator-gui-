@@ -1,0 +1,33 @@
+  
+name: Create Version Tag
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'CSharpCalculator.csproj'
+
+jobs:
+  tag:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+        
+    - name: Get Version
+      id: version
+      shell: pwsh
+      run: |
+        $xml = [Xml] (Get-Content CSharpCalculator.csproj)
+        $version = $xml.Project.PropertyGroup.Version
+        echo "VERSION=v$version" >> $env:GITHUB_OUTPUT
+        
+    - name: Create Tag
+      run: |
+        if ! git rev-parse ${{ steps.version.outputs.VERSION }} >/dev/null 2>&1; then
+          git tag ${{ steps.version.outputs.VERSION }}
+          git push origin ${{ steps.version.outputs.VERSION }}
+        fi
